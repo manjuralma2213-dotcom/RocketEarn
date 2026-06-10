@@ -3,68 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unlimited P2P Share App</title>
+    <title>ChatApp - Premium P2P Share</title>
+    <!-- Icons (FontAwesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #e9ecef; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #333; }
-        .hidden { display: none; }
-        .box { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
-        .msg-box { border: 1px solid #ccc; padding: 15px; height: 400px; overflow-y: auto; margin-bottom: 15px; background: #fff; border-radius: 8px; }
-        .msg { margin: 10px 0; padding: 12px; background: #f1f0f0; border-radius: 8px; word-wrap: break-word; display: inline-block; max-width: 80%; }
-        .msg-container { width: 100%; margin-bottom: 10px; display: flex; flex-direction: column; align-items: flex-start; }
-        .msg-container.my-msg { align-items: flex-end; }
-        .my-msg .msg { background: #dcf8c6; }
-        .btn { padding: 10px 15px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; font-weight: bold; margin-top: 5px;}
-        .btn:hover { background: #0056b3; }
-        .btn-small { padding: 5px 10px; font-size: 12px; margin-right: 5px; background: #6c757d; }
-        .btn-small:hover { background: #5a6268; }
-        textarea { width: 95%; height: 100px; margin-bottom: 10px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit;}
-        input[type="text"] { padding: 10px; width: 60%; border: 1px solid #ccc; border-radius: 5px; }
+        /* CSS VARIABLES FOR WHATSAPP THEME */
+        :root {
+            --primary: #008069;
+            --primary-light: #00A884;
+            --bg-chat: #EFEAE2;
+            --bg-panel: #F0F2F5;
+            --text-main: #111B21;
+            --text-muted: #667781;
+            --bubble-me: #D9FDD3;
+            --bubble-them: #FFFFFF;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        
+        body { background-color: #d1d7db; height: 100vh; display: flex; justify-content: center; align-items: center; }
+
+        /* --- LOGIN SCREEN --- */
+        #loginScreen {
+            background: white; width: 100%; max-width: 400px; padding: 40px; border-radius: 10px; box-shadow: 0 17px 50px 0 rgba(11,20,26,.19); text-align: center;
+        }
+        #loginScreen i { font-size: 50px; color: var(--primary-light); margin-bottom: 20px; }
+        #loginScreen h2 { margin-bottom: 10px; color: var(--text-main); }
+        #loginScreen p { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
+        .input-group { position: relative; margin-bottom: 20px; }
+        .input-group input { width: 100%; padding: 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; }
+        .input-group input:focus { border-color: var(--primary); }
+        .btn-login { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        .btn-login:hover { background: var(--primary-light); }
+
+        /* --- MAIN APP UI --- */
+        #mainApp {
+            display: none; width: 100%; max-width: 1200px; height: 95vh; background: white; box-shadow: 0 1px 1px 0 rgba(0,0,0,.06); display: flex;
+        }
+
+        /* LEFT PANEL (Sidebar) */
+        .sidebar { width: 35%; background: white; border-right: 1px solid #d1d7db; display: flex; flex-direction: column; }
+        .header { background: var(--bg-panel); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; height: 60px; }
+        .header .user-info { display: flex; align-items: center; font-weight: 500; font-size: 16px; }
+        .header i { font-size: 24px; color: var(--text-muted); margin-right: 15px; }
+        
+        .search-bar { background: white; padding: 10px; border-bottom: 1px solid #d1d7db; display: flex; }
+        .search-bar input { flex: 1; padding: 10px; border: none; background: var(--bg-panel); border-radius: 8px; outline: none; font-size: 14px; }
+        .search-bar button { padding: 10px 15px; background: var(--primary); color: white; border: none; border-radius: 8px; margin-left: 5px; cursor: pointer; }
+
+        .requests-area { flex: 1; overflow-y: auto; background: white; }
+        .request-item { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f2f2f2; }
+        .request-item .name { font-weight: 500; }
+        .btn-accept { background: var(--primary-light); color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; }
+
+        /* RIGHT PANEL (Chat Window) */
+        .chat-window { width: 65%; display: flex; flex-direction: column; background: var(--bg-panel); position: relative; }
+        .chat-header { background: var(--bg-panel); height: 60px; padding: 10px 20px; display: flex; align-items: center; border-bottom: 1px solid #d1d7db; }
+        .chat-header .friend-name { font-size: 16px; font-weight: 500; margin-left: 15px; }
+
+        .chat-body { flex: 1; background-color: var(--bg-chat); background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
+        
+        /* Message Bubbles */
+        .msg-row { display: flex; width: 100%; margin-bottom: 10px; }
+        .msg-row.me { justify-content: flex-end; }
+        .msg-row.them { justify-content: flex-start; }
+        
+        .bubble { max-width: 65%; padding: 10px 15px; border-radius: 8px; position: relative; font-size: 14.5px; line-height: 20px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
+        .msg-row.me .bubble { background: var(--bubble-me); border-top-right-radius: 0; }
+        .msg-row.them .bubble { background: var(--bubble-them); border-top-left-radius: 0; }
+        
+        .bubble pre { white-space: pre-wrap; font-family: inherit; margin: 0; }
+        
+        .msg-actions { margin-top: 8px; display: flex; gap: 10px; font-size: 12px; }
+        .msg-actions button { background: none; border: none; color: var(--primary); cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px;}
+        .msg-actions button:hover { text-decoration: underline; }
+
+        /* Chat Footer (Input) */
+        .chat-footer { background: var(--bg-panel); padding: 10px 20px; display: flex; align-items: center; gap: 10px; }
+        .btn-attach { background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; position: relative; }
+        .btn-attach input[type="file"] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+        
+        .chat-footer textarea { flex: 1; padding: 12px 20px; border-radius: 24px; border: none; outline: none; font-size: 15px; resize: none; max-height: 100px; }
+        
+        .btn-send { background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; cursor: pointer; }
+
+        /* Welcome Screen (Before Chat) */
+        .welcome-screen { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--bg-panel); text-align: center; }
+        .welcome-screen i { font-size: 100px; color: #ccc; margin-bottom: 20px; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🚀 Unlimited Real-Time Share App</h2>
+<!-- 1. LOGIN SCREEN -->
+<div id="loginScreen">
+    <i class="fab fa-whatsapp"></i>
+    <h2>Welcome to ChatApp</h2>
+    <p>Enter a username to get started</p>
+    <div class="input-group">
+        <input type="text" id="username" placeholder="Phone number or Username" onkeypress="handleLoginEnter(event)">
+    </div>
+    <button class="btn-login" onclick="window.login()">Agree and Continue</button>
+</div>
+
+<!-- 2. MAIN APP UI -->
+<div id="mainApp" class="hidden">
     
-    <!-- Step 1: Login -->
-    <div id="loginSection" class="box">
-        <h3>Create / Login Account</h3>
-        <input type="text" id="username" placeholder="Enter your unique device username">
-        <button class="btn" onclick="window.login()">Login</button>
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+        <!-- Header -->
+        <div class="header">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span id="myUsername">User</span>
+            </div>
+            <i class="fas fa-ellipsis-v"></i>
+        </div>
+        
+        <!-- Add Friend -->
+        <div class="search-bar">
+            <input type="text" id="targetUser" placeholder="Enter friend's username...">
+            <button onclick="window.sendRequest()"><i class="fas fa-user-plus"></i></button>
+        </div>
+
+        <!-- Requests List -->
+        <div class="requests-area" id="requestsArea">
+            <div style="padding: 15px; color: var(--text-muted); font-size: 14px; text-align: center;">No new requests</div>
+        </div>
     </div>
 
-    <!-- Step 2: Dashboard (Send Request) -->
-    <div id="dashboardSection" class="hidden box">
-        <h3 id="myUsername" style="color: #007bff;"></h3>
-        <hr>
-        <h4>Send Connection Request:</h4>
-        <input type="text" id="targetUser" placeholder="Enter other device's username">
-        <button class="btn" onclick="window.sendRequest()">Send Request</button>
+    <!-- RIGHT CHAT WINDOW -->
+    <div class="chat-window">
+        <!-- Welcome Screen (Shown initially) -->
+        <div id="welcomeScreen" class="welcome-screen">
+            <i class="fas fa-comments"></i>
+            <h2>ChatApp Web</h2>
+            <p style="color: var(--text-muted);">Send and receive messages and large files without keeping your phone online.<br>Connect with a friend to start.</p>
+        </div>
 
-        <div id="requestsArea" style="margin-top: 15px; color: red; font-weight: bold;"></div>
-        <hr>
-        <h4>Active Chat: <span id="chattingWith" style="color: green;">None</span></h4>
-    </div>
+        <!-- Active Chat Interface -->
+        <div id="chatInterface" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+            <!-- Header -->
+            <div class="chat-header">
+                <i class="fas fa-user-circle" style="font-size: 40px; color: #ccc;"></i>
+                <div class="friend-name" id="chattingWith">Friend Name</div>
+            </div>
 
-    <!-- Step 3: Chat & Share Area -->
-    <div id="chatSection" class="hidden box">
-        <div class="msg-box" id="messages"></div>
-        <textarea id="msgInput" placeholder="Paste unlimited text/words here..."></textarea><br>
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-            <input type="file" id="fileInput">
-            <button class="btn" style="background: #28a745;" onclick="window.sendMessage()">Send Data</button>
+            <!-- Messages Area -->
+            <div class="chat-body" id="messages">
+                <!-- Messages will appear here -->
+            </div>
+
+            <!-- Input Area -->
+            <div class="chat-footer">
+                <button class="btn-attach">
+                    <i class="fas fa-paperclip"></i>
+                    <input type="file" id="fileInput">
+                </button>
+                <textarea id="msgInput" placeholder="Type a message or paste unlimited text..."></textarea>
+                <button class="btn-send" onclick="window.sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Firebase v9 Modular SDK (CDN) -->
+<!-- Firebase v9 Modular SDK -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, set, push, onValue, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // ✅ Aapka Diya Hua Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyC3pHuV6hqAVxosizYSy4dwae73s9KT8ig",
       authDomain: "chatapp-dfe34.firebaseapp.com",
@@ -75,7 +186,6 @@
       appId: "1:565916852797:web:8182eaaa1b7bc8c9840054"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
@@ -83,44 +193,61 @@
     let currentFriend = "";
     let chatRoomID = "";
 
-    // 1. LOGIN SYSTEM
+    // Security: Function to fix "System Core" error & prevent HTML bugs
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, tag => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        }[tag]));
+    }
+
+    // 1. LOGIN
     window.login = function() {
         const user = document.getElementById('username').value.trim();
         if(user) {
             currentUser = user;
-            document.getElementById('loginSection').classList.add('hidden');
-            document.getElementById('dashboardSection').classList.remove('hidden');
-            document.getElementById('myUsername').innerText = "📱 Logged in as: " + user;
+            document.getElementById('loginScreen').classList.add('hidden');
+            
+            // Flex to show main app layout
+            const mainApp = document.getElementById('mainApp');
+            mainApp.classList.remove('hidden');
+            mainApp.style.display = 'flex';
+            
+            document.getElementById('myUsername').innerText = user;
 
-            // Save user to DB
             set(ref(db, 'users/' + currentUser), true);
-            listenForRequests(); // Start checking for requests
+            listenForRequests();
         } else {
             alert("Please enter a username!");
         }
     };
 
-    // 2. SEND CONNECTION REQUEST
+    window.handleLoginEnter = function(e) {
+        if(e.key === 'Enter') window.login();
+    }
+
+    // 2. SEND REQUEST
     window.sendRequest = function() {
         const to = document.getElementById('targetUser').value.trim();
         if(to && to !== currentUser) {
             set(ref(db, 'requests/' + to), currentUser);
-            alert("Request sent successfully to: " + to);
+            alert("Request sent to " + to);
+            document.getElementById('targetUser').value = "";
         }
     };
 
-    // 3. LISTEN FOR INCOMING REQUESTS
+    // 3. LISTEN FOR REQUESTS
     function listenForRequests() {
         onValue(ref(db, 'requests/' + currentUser), (snapshot) => {
             const fromUser = snapshot.val();
             if (fromUser) {
-                const reqDiv = document.createElement('div');
-                reqDiv.innerHTML = `<p style="background: #ffeeba; padding: 10px; border-radius: 5px;">
-                    <b>${fromUser}</b> wants to connect! 
-                    <button class="btn" style="background: green; padding: 5px 10px;" onclick="window.acceptRequest('${fromUser}')">Accept</button>
-                </p>`;
-                document.getElementById('requestsArea').innerHTML = ""; 
-                document.getElementById('requestsArea').appendChild(reqDiv);
+                document.getElementById('requestsArea').innerHTML = `
+                    <div class="request-item">
+                        <div class="name"><i class="fas fa-bell" style="color:var(--primary); margin-right:5px;"></i> ${fromUser}</div>
+                        <button class="btn-accept" onclick="window.acceptRequest('${fromUser}')">Accept</button>
+                    </div>
+                `;
+            } else {
+                document.getElementById('requestsArea').innerHTML = `<div style="padding: 15px; color: var(--text-muted); font-size: 14px; text-align: center;">No new requests</div>`;
             }
         });
     }
@@ -128,16 +255,15 @@
     // 4. ACCEPT REQUEST
     window.acceptRequest = function(fromUser) {
         currentFriend = fromUser;
-        chatRoomID = [currentUser, fromUser].sort().join("_"); // Create unique room ID
+        chatRoomID = [currentUser, fromUser].sort().join("_");
         
-        // Notify sender that request is accepted
         set(ref(db, 'accepted/' + fromUser), currentUser);
-        remove(ref(db, 'requests/' + currentUser)); // Clear request
+        remove(ref(db, 'requests/' + currentUser)); 
         
         startChatUI(fromUser);
     };
 
-    // 5. CHECK IF MY REQUEST WAS ACCEPTED
+    // 5. CHECK ACCEPTANCE
     setInterval(() => {
         if(currentUser && !currentFriend){
             onValue(ref(db, 'accepted/' + currentUser), (snapshot) => {
@@ -152,27 +278,22 @@
         }
     }, 2000);
 
-    // ACTIVATE CHAT UI
     function startChatUI(friend) {
-        document.getElementById('requestsArea').innerHTML = "";
+        document.getElementById('welcomeScreen').classList.add('hidden');
+        document.getElementById('chatInterface').classList.remove('hidden');
         document.getElementById('chattingWith').innerText = friend;
-        document.getElementById('chatSection').classList.remove('hidden');
-        alert("🎉 Connection Successful! You can now send unlimited data to " + friend);
         listenForMessages();
     }
 
-    // 6. SEND UNLIMITED TEXT OR FILE
+    // 6. SEND UNLIMITED TEXT / FILE
     window.sendMessage = function() {
-        const text = document.getElementById('msgInput').value;
+        if (!currentFriend) return;
+
+        const inputEl = document.getElementById('msgInput');
+        const text = inputEl.value; // RAW Text fetch to avoid errors
         const fileInput = document.getElementById('fileInput').files[0];
 
-        if (!currentFriend) {
-            alert("Please connect with someone first!");
-            return;
-        }
-
         if (fileInput) {
-            // Convert file to Base64
             const reader = new FileReader();
             reader.readAsDataURL(fileInput);
             reader.onload = () => {
@@ -184,8 +305,7 @@
                     timestamp: Date.now()
                 });
             };
-        } else if (text) {
-            // Send Text
+        } else if (text.trim() !== "") {
             push(ref(db, 'chats/' + chatRoomID), {
                 sender: currentUser,
                 message: text,
@@ -194,11 +314,11 @@
             });
         }
         
-        document.getElementById('msgInput').value = "";
+        inputEl.value = "";
         document.getElementById('fileInput').value = "";
     };
 
-    // 7. LISTEN FOR NEW MESSAGES REAL-TIME
+    // 7. LISTEN MESSAGES
     function listenForMessages() {
         onChildAdded(ref(db, 'chats/' + chatRoomID), (snapshot) => {
             const data = snapshot.val();
@@ -206,50 +326,70 @@
         });
     }
 
-    // 8. SHOW MESSAGE & ADD COPY/DOWNLOAD BUTTONS
-    function appendMessage(sender, data, type, filename) {
-        const containerDiv = document.createElement('div');
-        containerDiv.className = sender === currentUser ? 'msg-container my-msg' : 'msg-container';
+    // 8. APPEND UI (With Text Protection)
+    function appendMessage(sender, rawData, type, filename) {
+        const isMe = sender === currentUser;
+        const msgRow = document.createElement('div');
+        msgRow.className = isMe ? 'msg-row me' : 'msg-row them';
         
         const uniqueId = "id_" + Math.random().toString(36).substr(2, 9); 
-        let htmlContent = `<div class="msg"><b>${sender}:</b><br>`;
+        
+        let content = '';
+        let actions = '';
 
         if (type === 'text') {
-            htmlContent += `<span id="${uniqueId}" style="white-space: pre-wrap;">${data}</span><br><br>
-                            <button class="btn btn-small" onclick="window.copyText('${uniqueId}')">📋 Copy</button>
-                            <button class="btn btn-small" onclick="window.downloadText('${uniqueId}')">💾 Download TXT</button>`;
+            // Fix "System Core" Issue: Using strict escaping
+            const safeData = escapeHTML(rawData);
+            
+            content = `<pre id="${uniqueId}">${safeData}</pre>`;
+            actions = `
+                <div class="msg-actions">
+                    <button onclick="window.copyText('${uniqueId}')"><i class="fas fa-copy"></i> Copy</button>
+                    <button onclick="window.downloadText('${uniqueId}')"><i class="fas fa-download"></i> TXT</button>
+                </div>
+            `;
         } else if (type === 'file') {
-            htmlContent += `📎 <i>${filename}</i><br><br>
-                            <button class="btn btn-small" style="background: #17a2b8;" onclick="window.downloadFile('${data}', '${filename}')">⬇️ Download File</button>`;
+            content = `<div><i class="fas fa-file" style="font-size:30px; margin-bottom:10px; color:#666;"></i><br><b>${filename}</b></div>`;
+            actions = `
+                <div class="msg-actions">
+                    <button onclick="window.downloadFile('${rawData}', '${filename}')"><i class="fas fa-download"></i> Download</button>
+                </div>
+            `;
         }
 
-        htmlContent += `</div>`;
-        containerDiv.innerHTML = htmlContent;
+        msgRow.innerHTML = `
+            <div class="bubble">
+                ${content}
+                ${actions}
+            </div>
+        `;
 
         const messagesBox = document.getElementById('messages');
-        messagesBox.appendChild(containerDiv);
-        messagesBox.scrollTop = messagesBox.scrollHeight; // Auto-scroll to bottom
+        messagesBox.appendChild(msgRow);
+        messagesBox.scrollTop = messagesBox.scrollHeight;
     }
 
-    // --- REAL-TIME UTILITY FUNCTIONS ---
-    
-    // Copy Text
+    // --- REAL-TIME UTILITIES ---
     window.copyText = function(elementId) {
         const text = document.getElementById(elementId).innerText;
-        navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
+        navigator.clipboard.writeText(text).then(() => {
+            // Small temporary visual feedback
+            const btn = event.currentTarget;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-check" style="color:green;"></i> Copied!`;
+            setTimeout(() => btn.innerHTML = originalHTML, 2000);
+        });
     };
 
-    // Download Text as .txt file
     window.downloadText = function(elementId) {
         const text = document.getElementById(elementId).innerText;
         const blob = new Blob([text], { type: 'text/plain' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = "Shared_Text.txt";
+        link.download = "ChatApp_Message.txt";
         link.click();
     };
 
-    // Download Received File
     window.downloadFile = function(base64Data, filename) {
         const link = document.createElement('a');
         link.href = base64Data;
