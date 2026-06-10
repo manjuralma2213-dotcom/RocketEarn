@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unlimited P2P Share App</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #e9ecef; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        .hidden { display: none; }
+        .box { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
+        .msg-box { border: 1px solid #ccc; padding: 15px; height: 400px; overflow-y: auto; margin-bottom: 15px; background: #fff; border-radius: 8px; }
+        .msg { margin: 10px 0; padding: 12px; background: #f1f0f0; border-radius: 8px; word-wrap: break-word; display: inline-block; max-width: 80%; }
+        .msg-container { width: 100%; margin-bottom: 10px; display: flex; flex-direction: column; align-items: flex-start; }
+        .msg-container.my-msg { align-items: flex-end; }
+        .my-msg .msg { background: #dcf8c6; }
+        .btn { padding: 10px 15px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; font-weight: bold; margin-top: 5px;}
+        .btn:hover { background: #0056b3; }
+        .btn-small { padding: 5px 10px; font-size: 12px; margin-right: 5px; background: #6c757d; }
+        .btn-small:hover { background: #5a6268; }
+        textarea { width: 95%; height: 100px; margin-bottom: 10px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit;}
+        input[type="text"] { padding: 10px; width: 60%; border: 1px solid #ccc; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🚀 Unlimited Real-Time Share App</h2>
+    
+    <!-- Step 1: Login -->
+    <div id="loginSection" class="box">
+        <h3>Create / Login Account</h3>
+        <input type="text" id="username" placeholder="Enter your unique device username">
+        <button class="btn" onclick="window.login()">Login</button>
+    </div>
+
+    <!-- Step 2: Dashboard (Send Request) -->
+    <div id="dashboardSection" class="hidden box">
+        <h3 id="myUsername" style="color: #007bff;"></h3>
+        <hr>
+        <h4>Send Connection Request:</h4>
+        <input type="text" id="targetUser" placeholder="Enter other device's username">
+        <button class="btn" onclick="window.sendRequest()">Send Request</button>
+
+        <div id="requestsArea" style="margin-top: 15px; color: red; font-weight: bold;"></div>
+        <hr>
+        <h4>Active Chat: <span id="chattingWith" style="color: green;">None</span></h4>
+    </div>
+
+    <!-- Step 3: Chat & Share Area -->
+    <div id="chatSection" class="hidden box">
+        <div class="msg-box" id="messages"></div>
+        <textarea id="msgInput" placeholder="Paste unlimited text/words here..."></textarea><br>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <input type="file" id="fileInput">
+            <button class="btn" style="background: #28a745;" onclick="window.sendMessage()">Send Data</button>
+        </div>
+    </div>
+</div>
+
+<!-- Firebase v9 Modular SDK (CDN) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, set, push, onValue, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    // ✅ Aapka Diya Hua Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyC3pHuV6hqAVxosizYSy4dwae73s9KT8ig",
+      authDomain: "chatapp-dfe34.firebaseapp.com",
+      databaseURL: "https://chatapp-dfe34-default-rtdb.firebaseio.com",
+      projectId: "chatapp-dfe34",
+      storageBucket: "chatapp-dfe34.firebasestorage.app",
+      messagingSenderId: "565916852797",
+      appId: "1:565916852797:web:8182eaaa1b7bc8c9840054"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let currentUser = "";
+    let currentFriend = "";
+    let chatRoomID = "";
+
+    // 1. LOGIN SYSTEM
+    window.login = function() {
+        const user = document.getElementById('username').value.trim();
+        if(user) {
+            currentUser = user;
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            document.getElementById('myUsername').innerText = "📱 Logged in as: " + user;
+
+            // Save user to DB
+            set(ref(db, 'users/' + currentUser), true);
+            listenForRequests(); // Start checking for requests
+        } else {
+            alert("Please enter a username!");
+        }
+    };
+
+    // 2. SEND CONNECTION REQUEST
+    window.sendRequest = function() {
+        const to = document.getElementById('targetUser').value.trim();
+        if(to && to !== currentUser) {
+            set(ref(db, 'requests/' + to), currentUser);
+            alert("Request sent successfully to: " + to);
+        }
+    };
+
+    // 3. LISTEN FOR INCOMING REQUESTS
+    function listenForRequests() {
+        onValue(ref(db, 'requests/' + currentUser), (snapshot) => {
+            const fromUser = snapshot.val();
+            if (fromUser) {
+                const reqDiv = document.createElement('div');
+                reqDiv.innerHTML = `<p style="background: #ffeeba; padding: 10px; border-radius: 5px;">
+                    <b>${fromUser}</b> wants to connect! 
+                    <button class="btn" style="background: green; padding: 5px 10px;" onclick="window.acceptRequest('${fromUser}')">Accept</button>
+                </p>`;
+                document.getElementById('requestsArea').innerHTML = ""; 
+                document.getElementById('requestsArea').appendChild(reqDiv);
+            }
+        });
+    }
+
+    // 4. ACCEPT REQUEST
+    window.acceptRequest = function(fromUser) {
+        currentFriend = fromUser;
+        chatRoomID = [currentUser, fromUser].sort().join("_"); // Create unique room ID
+        
+        // Notify sender that request is accepted
+        set(ref(db, 'accepted/' + fromUser), currentUser);
+        remove(ref(db, 'requests/' + currentUser)); // Clear request
+        
+        startChatUI(fromUser);
+    };
+
+    // 5. CHECK IF MY REQUEST WAS ACCEPTED
+    setInterval(() => {
+        if(currentUser && !currentFriend){
+            onValue(ref(db, 'accepted/' + currentUser), (snapshot) => {
+                const friend = snapshot.val();
+                if(friend) {
+                    currentFriend = friend;
+                    chatRoomID = [currentUser, friend].sort().join("_");
+                    remove(ref(db, 'accepted/' + currentUser));
+                    startChatUI(friend);
+                }
+            }, { onlyOnce: true });
+        }
+    }, 2000);
+
+    // ACTIVATE CHAT UI
+    function startChatUI(friend) {
+        document.getElementById('requestsArea').innerHTML = "";
+        document.getElementById('chattingWith').innerText = friend;
+        document.getElementById('chatSection').classList.remove('hidden');
+        alert("🎉 Connection Successful! You can now send unlimited data to " + friend);
+        listenForMessages();
+    }
+
+    // 6. SEND UNLIMITED TEXT OR FILE
+    window.sendMessage = function() {
+        const text = document.getElementById('msgInput').value;
+        const fileInput = document.getElementById('fileInput').files[0];
+
+        if (!currentFriend) {
+            alert("Please connect with someone first!");
+            return;
+        }
+
+        if (fileInput) {
+            // Convert file to Base64
+            const reader = new FileReader();
+            reader.readAsDataURL(fileInput);
+            reader.onload = () => {
+                push(ref(db, 'chats/' + chatRoomID), {
+                    sender: currentUser,
+                    message: reader.result,
+                    type: 'file',
+                    filename: fileInput.name,
+                    timestamp: Date.now()
+                });
+            };
+        } else if (text) {
+            // Send Text
+            push(ref(db, 'chats/' + chatRoomID), {
+                sender: currentUser,
+                message: text,
+                type: 'text',
+                timestamp: Date.now()
+            });
+        }
+        
+        document.getElementById('msgInput').value = "";
+        document.getElementById('fileInput').value = "";
+    };
+
+    // 7. LISTEN FOR NEW MESSAGES REAL-TIME
+    function listenForMessages() {
+        onChildAdded(ref(db, 'chats/' + chatRoomID), (snapshot) => {
+            const data = snapshot.val();
+            appendMessage(data.sender, data.message, data.type, data.filename);
+        });
+    }
+
+    // 8. SHOW MESSAGE & ADD COPY/DOWNLOAD BUTTONS
+    function appendMessage(sender, data, type, filename) {
+        const containerDiv = document.createElement('div');
+        containerDiv.className = sender === currentUser ? 'msg-container my-msg' : 'msg-container';
+        
+        const uniqueId = "id_" + Math.random().toString(36).substr(2, 9); 
+        let htmlContent = `<div class="msg"><b>${sender}:</b><br>`;
+
+        if (type === 'text') {
+            htmlContent += `<span id="${uniqueId}" style="white-space: pre-wrap;">${data}</span><br><br>
+                            <button class="btn btn-small" onclick="window.copyText('${uniqueId}')">📋 Copy</button>
+                            <button class="btn btn-small" onclick="window.downloadText('${uniqueId}')">💾 Download TXT</button>`;
+        } else if (type === 'file') {
+            htmlContent += `📎 <i>${filename}</i><br><br>
+                            <button class="btn btn-small" style="background: #17a2b8;" onclick="window.downloadFile('${data}', '${filename}')">⬇️ Download File</button>`;
+        }
+
+        htmlContent += `</div>`;
+        containerDiv.innerHTML = htmlContent;
+
+        const messagesBox = document.getElementById('messages');
+        messagesBox.appendChild(containerDiv);
+        messagesBox.scrollTop = messagesBox.scrollHeight; // Auto-scroll to bottom
+    }
+
+    // --- REAL-TIME UTILITY FUNCTIONS ---
+    
+    // Copy Text
+    window.copyText = function(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
+    };
+
+    // Download Text as .txt file
+    window.downloadText = function(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = "Shared_Text.txt";
+        link.click();
+    };
+
+    // Download Received File
+    window.downloadFile = function(base64Data, filename) {
+        const link = document.createElement('a');
+        link.href = base64Data;
+        link.download = filename;
+        link.click();
+    };
+</script>
+
+</body>
+</html>
